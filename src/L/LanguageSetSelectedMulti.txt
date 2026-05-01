@@ -1,0 +1,100 @@
+
+Sub LanguageSetSelectedMulti()
+' Paul Beverley - Version 24.04.26
+' Changes the language of the (roughly) selected text
+
+Dim myLanguage(1 To 10) As Long
+
+myLanguage(1) = wdFrench
+myLanguage(2) = wdItalian
+myLanguage(3) = wdSpanish
+myLanguage(4) = wdGerman
+' myLanguage(5) = wdPolish
+
+For i = 10 To 1 Step -1
+  If myLanguage(i) > 0 Then
+    numLangs = i
+    Exit For
+  End If
+Next i
+' Extend selection to whole words
+If Selection.Start = Selection.End Then
+  Selection.Expand wdWord
+  If Len(Selection) < 3 Then
+    Selection.Collapse wdCollapseStart
+    Selection.MoveLeft , 1
+    Selection.Expand wdWord
+  End If
+  Do While InStr(ChrW(8217) & "' ", Right(Selection.Text, 1)) > 0
+    Selection.MoveEnd , -1
+    DoEvents
+  Loop
+Else
+  endNow = Selection.End
+  Selection.MoveLeft wdWord, 1
+  startNow = Selection.Start
+  Selection.End = endNow
+  Selection.Expand wdWord
+  Do While InStr(ChrW(8217) & "' ", Right(Selection.Text, 1)) > 0
+    Selection.MoveEnd , -1
+    DoEvents
+  Loop
+  Selection.Start = startNow
+End If
+
+myWords = Split(Trim(Selection.Text), " ")
+numWords = UBound(myWords)
+
+' Copy into sortable array
+ReDim myList(numWords) As String
+For i = 0 To numWords
+    myList(i) = myWords(i)
+Next i
+' Sort by length descending (simple bubble sort)
+For i = 0 To numWords
+  For j = i + 1 To numWords
+    If Len(myList(j)) > Len(myList(i)) Then
+      temp = myList(i)
+      myList(i) = myList(j)
+      myList(j) = temp
+    End If
+  Next j
+Next i
+
+Dim myScore(10) As Integer
+myLongWord = myList(0)
+myPrompt = "Word tested: " & vbCr & "                     " _
+     & UCase(myLongWord) & vbCr & vbCr
+For lang = 1 To 10
+  If myLanguage(lang) > 0 Then
+    If Application.CheckSpelling(myLongWord, _
+         MainDictionary:=Languages(myLanguage(lang)).NameLocal) = True Then
+      myScore(lang) = myScore(lang) + 1
+      myPrompt = myPrompt & Trim(Str(lang)) & ":  " & _
+           Languages(myLanguage(lang)).NameLocal & vbCr
+      mySum = mySum + 1
+      myLang = myLanguage(lang)
+    Else
+      myPrompt = myPrompt & "    [ " & Trim(Str(lang)) & ":  " & _
+           Languages(myLanguage(lang)).NameLocal & " ]" & vbCr
+      
+    End If
+  End If
+Next lang
+If mySum = 1 Then
+  ' The longest word is spelt correctly in only one language!
+  Selection.LanguageID = myLang
+  Exit Sub
+End If
+
+' Display language choice indicating "OK" languages
+Do
+  myText = InputBox(myPrompt, "LanguageSetSelectedMulti")
+  myNumber = Val(myText)
+  If myNumber = 0 Then Beep: Exit Sub
+Loop Until myNumber > 0 And myNumber < numLangs + 1
+Selection.LanguageID = myLanguage(myNumber)
+End Sub
+
+
+

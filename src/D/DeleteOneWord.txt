@@ -1,48 +1,73 @@
 
 Sub DeleteOneWord()
-' Paul Beverley - Version 25.02.25
-' Deletes current word, but no punctuation (was called DeleteWord)
-
+' Paul Beverley - Version 01.11.25
+' Deletes current word, but no punctuation
+' (was called DeleteWord)
 
 If InStr(",.!;:" & vbCr, Selection) > 0 Then Selection.MoveLeft , 1
 If Selection = " " Then Selection.MoveRight , 1
 Set rng = Selection.Range.Duplicate
 rng.Expand wdWord
+Set rngS = Selection.Range.Duplicate
+rngS.Expand wdSentence
+isSentStart = (rng.Start = rngS.Start)
+
 Do While InStr(ChrW(8217) & "' ", Right(rng.Text, 1)) > 0
   rng.MoveEnd , -1
   DoEvents
 Loop
+myCap = Left(rng, 1)
+isCap = (UCase(myCap) = myCap)
 rng.MoveEnd , 1
 nextChar = Right(rng, 1)
 If nextChar <> " " Then nextChar = "."
-rng.MoveStart , -1
-prevChar = Left(rng, 1)
-If prevChar <> " " Then prevChar = "X"
-rng.MoveStart , -1
-prevPrevChar = Left(rng, 1)
-If prevPrevChar <> " " Then prevPrevChar = "X"
-myTest = prevPrevChar & prevChar & nextChar
+If rng.Start > 2 Then
+  rng.MoveStart , -1
+  prevChar = Left(rng, 1)
+  If prevChar <> " " Then prevChar = "X"
+  rng.MoveStart , -1
+  prevPrevChar = Left(rng, 1)
+  If prevPrevChar <> " " Then prevPrevChar = "X"
+  myTest = prevPrevChar & prevChar & nextChar
+  
+  Select Case myTest
+    Case "X  ": rng.MoveStart , 2
+    Case "   ": rng.MoveStart , 1
+    Case "X .": rng.MoveStart , 1
+                rng.MoveEnd , -1
+    Case " X.": rng.MoveStart , 2
+                rng.MoveEnd , 1
+    Case "  .": rng.MoveStart , 1
+                rng.MoveEnd , -1
+    Case " X ": rng.MoveStart , 2
+                rng.MoveEnd , -1
+    Case "XX ": rng.MoveStart , 2
+    Case "XX.": rng.MoveStart , 2
+                rng.MoveEnd , -1
+    Case Else: Beep: myTest = ""
+  End Select
+  If myTest > "" Then rng.Delete
+Else
+  rng.Delete
+End If
 
-Select Case myTest
-  Case "X  ": rng.MoveStart , 2
-  Case "   ": rng.MoveStart , 1
-  Case "X .": rng.MoveStart , 1
-              rng.MoveEnd , -1
-  Case " X.": rng.MoveStart , 2
-              rng.MoveEnd , 1
-  Case "  .": rng.MoveStart , 1
-              rng.MoveEnd , -1
-  Case " X ": rng.MoveStart , 2
-              rng.MoveEnd , -1
-  Case "XX ": If rng.start > 0 Then rng.MoveStart , 2
-  Case "XX.": rng.MoveStart , 2
-              rng.MoveEnd , -1
-  Case Else: Beep: myTest = ""
-End Select
-If myTest > "" Then rng.Delete
 If Selection = " " Then
   Selection.MoveEnd , 1
   Selection.Delete
+End If
+If isSentStart = True Then
+  Set rng = Selection.Range.Duplicate
+  rng.Expand wdWord
+  rng.Collapse wdCollapseEnd
+  rng.MoveEnd , 1
+  If rng = "," Then
+    rng.Delete
+    rng.MoveStart wdWord, 1
+    rng.MoveEnd , 1
+  End If
+  rng.Text = UCase(rng.Text)
+  rng.Collapse wdCollapseEnd
+  rng.Select
 End If
 End Sub
 

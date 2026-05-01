@@ -1,0 +1,69 @@
+
+Sub SpacesCleanup()
+' Paul Beverley - Version 09.04.26
+' Removes fixed spaces and redundant spaces
+
+doHighlight = 0
+' doHighlight = wdYellow
+doTrack = False
+' doTrack = True
+
+myFandRs = "^s|^32   ~^32{2,}|^32   ^32^t|^t   ^32^p|^p "
+
+myDo = "TEF"
+If ActiveDocument.Footnotes.Count = 0 Then myDo = Replace(myDo, "F", "")
+If ActiveDocument.Endnotes.Count = 0 Then myDo = Replace(myDo, "E", "")
+
+oldColour = Options.DefaultHighlightColorIndex
+Options.DefaultHighlightColorIndex = doHighlight
+
+myTrack = ActiveDocument.TrackRevisions
+ActiveDocument.TrackRevisions = doTrack
+
+myFandRs = Replace(Trim(myFandRs), "  ", " ")
+myFandRs = Replace(myFandRs, "  ", " ")
+thisArray = Split(myFandRs, " ")
+
+For myRun = 1 To Len(myDo)
+  doIt = Mid(myDo, myRun, 1)
+  Select Case doIt
+     Case "T": Set rng = ActiveDocument.Content
+     Case "F": Set rng = ActiveDocument.StoryRanges(wdFootnotesStory)
+     Case "E": Set rng = ActiveDocument.StoryRanges(wdEndnotesStory)
+  End Select
+
+  ' Do the F&Rs
+  For i = 0 To UBound(thisArray)
+    padPos = InStr(thisArray(i), "|")
+    myFind = Left(thisArray(i), padPos - 1)
+    myReplace = Mid(thisArray(i), padPos + 1)
+    If Left(myFind, 1) = ChrW(172) Then
+      doMatchCase = False
+      myFind = Mid(myFind, 2)
+    Else
+      doMatchCase = True
+    End If
+    If Left(myFind, 1) = "~" Then
+      doWild = True
+      myFind = Mid(myFind, 2)
+    Else
+      doWild = False
+    End If
+    With rng.Find
+      .ClearFormatting
+      .Replacement.ClearFormatting
+      .Text = myFind
+      .Replacement.Text = myReplace
+      If doHighlight <> 0 Then .Replacement.Highlight = True
+      .Wrap = wdFindContinue
+      .MatchWildcards = doWild
+      .MatchCase = doMatchCase
+      .Execute Replace:=wdReplaceAll
+    End With
+    DoEvents
+  Next i
+Next myRun
+ActiveDocument.TrackRevisions = myTrack
+Options.DefaultHighlightColorIndex = oldColour
+End Sub
+

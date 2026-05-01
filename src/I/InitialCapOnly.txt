@@ -1,6 +1,6 @@
 Sub InitialCapOnly()
 ' Paul Beverley - Version 29.05.10
-' Reduce all-capitals to initial cap
+' Reduces all-capitals to initial cap
 ' Crtl-Alt-I
 
 oldFind = Selection.Find.Text

@@ -1,15 +1,43 @@
 
 Sub FReditListChecker()
-' Paul Beverley - Version 01.12.25
+' Paul Beverley - Version 28.03.26
 ' Checks for possible anomalies in a FRedit list
-
 
 nmlStyle = ActiveDocument.Styles(wdStyleNormal)
 nmlFont = ActiveDocument.Styles(wdStyleNormal).Font.Name
 nmlSize = ActiveDocument.Styles(wdStyleNormal).Font.Size
+
+CR = vbCr: CR2 = CR & CR
+myMix = 9999999
+Set rng = ActiveDocument.Content
+endNow = rng.End
+' Correct linefeeds to paragraph
+' and line-end spaces to ^32
+With rng.Find
+  .ClearFormatting
+  .Replacement.ClearFormatting
+  .Text = "^11"
+  .Replacement.Text = "^p"
+  .Wrap = wdFindContinue
+  .Forward = True
+  .MatchWildcards = False
+  .Execute Replace:=wdReplaceAll
+  .Text = " ^p"
+  .Replacement.Text = "^^32^p"
+  .Execute Replace:=wdReplaceAll
+  DoEvents
+End With
+
+If rng.End > endNow Then
+  Beep
+  myResponse = MsgBox("Changed trailing spaces to ^32." & CR2 _
+       & "Continue?", vbQuestion + vbYesNo, "FReditListChecker")
+  If myResponse <> vbYes Then Exit Sub
+
+End If
+
 Set rng = ActiveDocument.Range(0, Selection.End)
 parNow = rng.Paragraphs.Count
-CR = vbCr
 
 For i = parNow To ActiveDocument.Paragraphs.Count
   foundError = False
@@ -22,7 +50,7 @@ For i = parNow To ActiveDocument.Paragraphs.Count
     GoTo ReportError
   End If
   If rng.Style <> nmlStyle Then
-    myCmnt = myCmnt & CR & "Style: " & rng.Style
+    myCmnt = myCmnt & CR & "Changing to style: " & rng.Style & "?! OK?" & CR
   Else
     fntName = rng.Font.Name
     If fntName <> nmlFont Then
@@ -34,41 +62,89 @@ For i = parNow To ActiveDocument.Paragraphs.Count
           Exit For
         End If
       Next j
-      myCmnt = myCmnt & CR & "Font name? (" & funnyFont & "))"
+      myCmnt = myCmnt & CR & "Did you mean to CHANGE the font name to " _
+           & funnyFont & "?" & CR
     End If
     fntSize = rng.Font.Size
-    If fntSize <> nmlSize Then
-      myCmnt = myCmnt & CR & "Font size? (" & fntSize & ")"
-    End If
+    If fntSize <> nmlSize Then myCmnt = myCmnt & CR & _
+      "Did you mean to CHANGE the font size to " & fntSize & "?" & CR
+    
+    If rng.Font.Bold = myMix Then myCmnt = myCmnt & CR _
+         & "If you want to add *bold*, make the WHOLE line bold. " & CR
+    
+    If rng.Font.Italic = myMix Then myCmnt = myCmnt & CR _
+         & "If you want to add /italic/, make the WHOLE line italic. " & CR
   End If
+  ' check strike-through
+  If rng.Font.StrikeThrough = myMix Then myCmnt = myCmnt & CR _
+       & "To stop this F&R being tracked, strike through the WHOLE line. " & CR
+  
+  ' check for highlight change
+  If rng.HighlightColorIndex = myMix Then myCmnt = myCmnt & CR & _
+           "Did you really mean to CHANGE the highlight colour?" & _
+           CR2 & "To ADD highlight, please highlight the WHOLE line."
+
+  ' check for colour change
+  If rng.Font.Color = myMix Then myCmnt = myCmnt & CR & _
+           "Did you really mean to CHANGE the highlight colour?" & _
+           CR2 & "To ADD font colour, please colour the WHOLE line."
+    
+  ' Check for funny characters
   myLine = rng.Text
   
-  If Len(myLine) > 1 And InStr(myLine, "|") = 0 And _
+  padPos = InStr(myLine, "|")
+  If Len(myLine) > 1 And padPos = 0 And _
        Left(myLine, 1) <> "#" Then
-    myCmnt = myCmnt & CR & "Missing pad character?"
+    myCmnt = myCmnt & CR & "Missing vertical bar character?"
   End If
   
-  ' Check if find & replace are different colour of highlight
-  If Len(myLine) > 3 And InStr(myLine, "|") > 0 Then
-    colourLeft = rng.Characters(2).HighlightColorIndex
-    colourRight = rng.Characters(Len(myLine) - 2).HighlightColorIndex
-    If colourLeft <> colourRight Then
+  ' Check if the find is very long
+  myFind = Left(myLine, padPos)
+  numWords = Len(myFind) - Len(Replace(myFind, " ", ""))
+  Debug.Print myLine, myFind, numWords
+  If numWords > 4 Then
+    myCmnt = myCmnt & CR & "This find phrase is very long. OK?" & _
+         CR2 & "Maybe it was meant to be a comment?"
+  End If
+  
+  firstChar = Left(myLine, 1)
+  restOfLine = Mid(myLine, 2)
+  
+  ' Check bent pipe
+  If firstChar <> ChrW(172) And InStr(restOfLine, ChrW(172)) > 0 Then
+    myCmnt = myCmnt & CR & "For case-insensitive F&R, bent pipe must be at start of line."
+  End If
+  
+  ' Check tilde for wildcard
+  If firstChar <> ChrW(126) And InStr(restOfLine, ChrW(126)) > 0 Then
+    myCmnt = myCmnt & CR & "For wildcard F&R, tilde must be at start of line."
+  End If
+  
+  ' Check two vertical bars
+  If Left(myLine, 1) <> ChrW(124) Then
+    numPads = Len(myLine) - Len(Replace(myLine, ChrW(124), ""))
+    If numPads > 1 Then
       myCmnt = myCmnt & CR & _
-           "Did you really mean to CHANGE highlight colour?"
+           "Did you really mean to have two vertical bars?"
     End If
   End If
+  If Left(myLine, 1) = "#" Then
+      myCmnt = myCmnt & CR & _
+           "FRedit will stop here and ignore the rest of the list. OK?"
+    End If
+  
 ReportError:
   If myCmnt > "" Then
     If Len(myCmnt) - Len(Replace(myCmnt, CR, "")) = 1 Then
       myCmnt = Mid(myCmnt, 2)
     End If
     rng2.Select
-    ActiveDocument.ActiveWindow.LargeScroll Down:=2
+    ActiveDocument.ActiveWindow.LargeScroll down:=2
     rng2.Select
     foundError = True
     Beep
-    myResponse = MsgBox(myCmnt & CR & CR & "Continue?", vbQuestion _
-        + vbYesNoCancel, "FReditListChecker")
+    myResponse = MsgBox(myCmnt & CR2 & "Continue?", vbQuestion _
+        + vbYesNo, "FReditListChecker")
     If myResponse <> vbYes Then Exit Sub
   End If
 Next i

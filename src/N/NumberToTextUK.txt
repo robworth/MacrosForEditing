@@ -1,6 +1,6 @@
 
 Sub NumberToTextUK()
-' Paul Beverley - Version 22.08.25
+' Paul Beverley - Version 25.03.26
 ' Converts next number into text, eg "two hundred and forty-two"
 
 
@@ -8,15 +8,13 @@ oldFind = Selection.Find.Text
 oldReplace = Selection.Find.Replacement.Text
 
 ' Find a number (six figures max)
-Selection.Collapse wdCollapseEnd
+Selection.Collapse wdCollapseStart
 With Selection.Find
   .ClearFormatting
-  .Text = "[0-9]{1,6}"
+  .Text = "<[0-9]{1,6}>"
   .Replacement.Text = ""
   .Forward = True
   .MatchWildcards = True
-  .MatchSuffix = False
-  .MatchPrefix = False
   .Execute
 End With
 
@@ -30,9 +28,8 @@ Selection.MoveStart , -1
 Set rng = Selection.Range.Duplicate
 Selection.Fields(1).Unlink
 DoEvents
-rng.Select
 
-numWords = Selection.Text
+numWords = rng.Text
 If InStr(numWords, "dred") > 0 And Right(numWords, 4) <> "dred" Then numWords = _
      Replace(numWords, "hundred", "hundred and")
 If InStr(numWords, "hundred") > 0 And InStr(numWords, "thousand") > 0 Then
@@ -41,7 +38,9 @@ Else
   If Right(numWords, 4) <> "sand" Then numWords = _
        Replace(numWords, "thousand", "thousand and")
 End If
-If numWords <> Selection.Text Then Selection.Text = numWords
+If numWords <> rng.Text Then rng.Text = numWords
+rng.Collapse wdCollapseEnd
+rng.Select
 
 With Selection.Find
   .Text = oldFind

@@ -1,6 +1,6 @@
 
 Sub MultiSwitch()
-' Paul Beverley - Version 21.03.25
+' Paul Beverley - Version 28.03.25
 ' Scripted word/phrase switching
 
 
@@ -42,7 +42,7 @@ Options.SmartCutPaste = False
 nowSearch = Selection.Find.Text
 
 ' Read the context, noting if the word is selected
-wasSelected = (Selection.End > Selection.start)
+wasSelected = (Selection.End > Selection.Start)
 If wasSelected = True Then maxWords = 1
 myTest = Selection.Text
 If Asc(myTest) = 13 Then Selection.MoveLeft , 1
@@ -61,20 +61,20 @@ If InStr(okChars, Left(Selection, 1)) > 0 Then
 End If
 
 isAbbrev = Not (Len(Selection) > minChars)
-startNow = Selection.start
+startNow = Selection.Start
 Set startRng = Selection.Range.Duplicate
 iMax = maxWords
 
 Set rng = Selection.Range.Duplicate
 rng.Collapse wdCollapseStart
-rng.MoveEnd Unit:=wdWord, count:=maxWords
-numTCs = rng.Revisions.count
+rng.MoveEnd Unit:=wdWord, Count:=maxWords
+numTCs = rng.Revisions.Count
 If numTCs > 0 Then
   rng.Revisions.AcceptAll
-  rng.MoveEnd Unit:=wdWord, count:=maxWords
+  rng.MoveEnd Unit:=wdWord, Count:=maxWords
 End If
 
-wdsLeft = rng.Words.count
+wdsLeft = rng.Words.Count
 If maxWords > wdsLeft Then maxWords = wdsLeft
 If Asc(rng.Words(wdsLeft)) = 13 Then maxWords = maxWords - 1
 For i = 1 To maxWords
@@ -84,7 +84,7 @@ For i = 1 To maxWords
     Exit For
   End If
   If Right(rng.Words(i), 1) = " " Then endStr(i) = endStr(i) - 1
-  myStr(i) = Trim(Left(rng, endStr(i) - rng.start))
+  myStr(i) = Trim(Left(rng, endStr(i) - rng.Start))
   DoEvents
 Next i
 If numTCs > 0 Then WordBasic.EditUndo
@@ -104,7 +104,7 @@ Next myDoc
 
 ' Find the zzSwitchList file
 If gottaList = False Then
-  Documents.Open fileName:=myList
+  Documents.Open FileName:=myList
   Set theList = ActiveDocument
   theDoc.Activate
 End If
@@ -119,9 +119,9 @@ With rng.Find
   .Replacement.Text = ""
   .Execute
   DoEvents
-  If .Found = True Then
+  If .found = True Then
     Beep
-    rng.start = rng.start - 1
+    rng.Start = rng.Start - 1
     rng.Collapse wdCollapseStart
     rng.Expand wdWord
     rng.HighlightColorIndex = wdYellow
@@ -143,13 +143,13 @@ If lastTwo <> CR2 Then rng.InsertAfter Text:=CR2
 firstTwo = Left(rng, 2)
 If firstTwo <> CR2 Then rng.InsertBefore Text:=CR2
 
-rng.start = 0
+rng.Start = 0
 rng.End = theList.Content.End
 ' Try to locate the selected text in the switch list
 allWords = rng.Text
 lfPos = InStr(allWords, ChrW(11))
 If lfPos > 0 Then
-  rng.start = lfPos - 2
+  rng.Start = lfPos - 2
   rng.End = lfPos + 1
   rng.Select
   Beep
@@ -201,7 +201,7 @@ If gottaMatch = False Then
       .MatchCase = False
     End With
     If Len(myWd) > 1 Then myWd = Left(myWd, Len(myWd) - 1)
-  Loop Until rng.Find.Found = True Or Len(myWd) = 1
+  Loop Until rng.Find.found = True Or Len(myWd) = 1
   rng.Collapse wdCollapseStart
   rng.Select
   Beep
@@ -234,7 +234,7 @@ If numAlts > 1 And wasSelected = False Then
 Else
   myChoice = 1
 End If
-rng.start = myPos + 2
+rng.Start = myPos + 2
 rng.Collapse wdCollapseStart
 rng.Expand wdParagraph
 
@@ -249,7 +249,7 @@ myNewItem = rng
 Dim gotFormat As Boolean
 gotFormat = rng.Font.Bold Or rng.Font.Italic Or rng.Font.SmallCaps _
      Or rng.Font.Underline Or rng.Font.Superscript Or rng.Font.Subscript _
-     Or rng.InlineShapes.count > 0
+     Or rng.InlineShapes.Count > 0
 If rng.Text = "" Then Beep: Exit Sub
 If AscW(rng) = 172 Or gotFormat Then
   useFormat = True
@@ -265,20 +265,20 @@ If Selection.Information(wdInCommentPane) = 0 And _
      Selection.Information(wdInFootnote) = 0 And _
      Selection.Information(wdInEndnote) = 0 Then
 
-  numCmts = ActiveDocument.Comments.count
+  numCmts = ActiveDocument.Comments.Count
   If numCmts > 0 And commentNearCheck = True Then
   ' Find scope of (range covered by) the next comment
     Set rng = Selection.Range.Duplicate
     rng.Collapse wdCollapseStart
-    rng.start = 0
-    cmtNumber = rng.Comments.count + 1
+    rng.Start = 0
+    cmtNumber = rng.Comments.Count + 1
     If cmtNumber <= numCmts Then
       Set nextCmtRange = ActiveDocument.Comments(cmtNumber).Scope
       
     ' Does the scope of that comment overlap the current word?
       Set rng = Selection.Range.Duplicate
       rng.Expand wdWord
-      If rng.End > nextCmtRange.start Then
+      If rng.End > nextCmtRange.Start Then
         Beep
         rng.Select
         myResponse = MsgBox("Selection contains a comment. Word might crash!" _
@@ -315,7 +315,7 @@ Else
 End If
 ActiveDocument.TrackRevisions = myTrack
 
-Selection.start = startNow
+Selection.Start = startNow
 textEnd = Selection.End
 If InStr(Selection, "^p") > 0 Then
   numCRs = 0
@@ -331,12 +331,12 @@ If InStr(Selection, "^p") > 0 Then
     .MatchWildcards = False
     .Execute
   End With
-  Do While Selection.Find.Found = True And Selection.start < textEnd
+  Do While Selection.Find.found = True And Selection.Start < textEnd
     Selection.TypeText Text:=vbCr
     Selection.Find.Execute
     numCRs = numCRs + 1
   Loop
-  Selection.start = startNow
+  Selection.Start = startNow
   Selection.End = textEnd - numCRs
   Selection.Find.Text = oldFind
 End If
@@ -354,19 +354,19 @@ If InStr(Selection, "^t") > 0 Then
     .MatchWildcards = False
     .Execute
   End With
-  Do While Selection.Find.Found = True And Selection.start < textEnd
+  Do While Selection.Find.found = True And Selection.Start < textEnd
     Selection.TypeText Text:=vbTab
     Selection.Find.Execute
     numTabs = numTabs + 1
   Loop
-  Selection.start = startNow
+  Selection.Start = startNow
   Selection.End = textEnd - numCRs - numTabs
   Selection.Find.Text = oldFind
 End If
 If Asc(Selection) = Asc("!") Then
   myLen = Len(Selection)
-  Selection.End = Selection.start + 1
-  Selection.start = Selection.start - 1
+  Selection.End = Selection.Start + 1
+  Selection.Start = Selection.Start - 1
   Selection.Delete
   Selection.MoveEnd , myLen - 1
 End If

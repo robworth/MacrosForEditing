@@ -1,10 +1,13 @@
-Sub ContentControlsRemove()
-' Paul Beverley - Version 14.04.21
-' Removes all content controls
-' Code provided by Gary Smith
 
-For Each myControl In ActiveDocument.ContentControls
-  myControl.Delete
-Next myControl
+Sub ContentControlsRemove()
+' Paul Beverley - Version 27.03.26
+' Removes all content controls
+
+myTrack = ActiveDocument.TrackRevisions
+ActiveDocument.TrackRevisions = False
+For i = ActiveDocument.ContentControls.Count To 1 Step -1
+  ActiveDocument.ContentControls(i).Delete
+Next i
+ActiveDocument.TrackRevisions = myTrack
 End Sub
 

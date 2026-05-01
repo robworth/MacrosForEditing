@@ -1,6 +1,6 @@
 
 Sub CopyToListAlphaMenu()
-' Paul Beverley - Version 26.01.26
+' Paul Beverley - Version 21.04.26
 ' Copies selected text into various alphabetic lists
 
 ' Filename contains (case INsensitive)
@@ -73,10 +73,10 @@ If Selection.Start = Selection.End Then
     Set rng = Selection.Range.Duplicate
     rng.Expand wdWord
     rng.MoveEnd wdWord, 1
-    chkWd = rng.Words.Last
+    chkWd = rng.Words.last
     If chkWd = "-" Then
       rng.MoveEnd wdWord, 2
-      chkWd = rng.Words.Last
+      chkWd = rng.Words.last
       If chkWd = "-" Then
         rng.MoveEnd wdWord, 1
       Else
@@ -205,13 +205,14 @@ rng.End = myListDoc.Content.End
 If LCase(rng) <> UCase(rng) Then
   For i = 1 To rng.Paragraphs.Count
     myNextItem = Replace(rng.Paragraphs(i).Range.Text, vbCr, "")
-    If LCase(myNextItem) > LCase(myText) Or _
-        LCase(myNextItem) = UCase(myNextItem) Then
-      Set rng = rng.Paragraphs(i).Range.Duplicate
-      Exit For
-      DoEvents
+    theFollowingItem = Replace(rng.Paragraphs(i + 1).Range.Text, vbCr, "")
+    If Len(myNextItem) > 0 Or (myNextItem = "" And theFollowingItem = "") Then
+      If LCase(myNextItem) > LCase(myText) Or _
+          LCase(myNextItem) = UCase(myNextItem) Then
+        Set rng = rng.Paragraphs(i).Range.Duplicate
+        Exit For
+      End If
     End If
-    DoEvents
   Next i
 End If
 rng.Collapse wdCollapseStart

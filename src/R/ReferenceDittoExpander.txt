@@ -1,0 +1,48 @@
+
+Sub ReferenceDittoExpander()
+' Paul Beverley - Version 13.03.26
+' Finds dittos used instead of author names and expands them
+
+Dim dittoText(3) As String
+dittoText(1) = "- - - "
+dittoText(2) = "^+^+^+ "
+dittoText(3) = "- - -^t"
+
+myCount = 0
+For i = 1 To 3
+  If dittoText(i) > "" Then
+    Set rng = ActiveDocument.Content
+    With rng.Find
+      .ClearFormatting
+      .Replacement.ClearFormatting
+      .text = dittoText(i)
+      .Wrap = wdFindStop
+      .Replacement.text = ""
+      .Forward = True
+      .MatchWildcards = False
+      .MatchWholeWord = False
+      .Execute
+    End With
+    
+    Do While rng.Find.found = True
+      myCount = myCount + 1
+      Set rng2 = rng.Duplicate
+      rng2.MoveStart , -1
+      rng2.Collapse wdCollapseStart
+      rng2.expand wdParagraph
+      For Each wd In rng2.words
+        If Val(wd) > 1000 Then Exit For
+      Next wd
+      rng2.End = wd.start
+      rng.text = rng2.text
+      rng.Select
+      rng.Collapse wdCollapseEnd
+      rng.Find.Execute
+      DoEvents
+    Loop
+  End If
+Next i
+
+MsgBox "Changed: " & myCount
+End Sub
+

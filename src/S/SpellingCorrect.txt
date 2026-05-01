@@ -1,43 +1,33 @@
 
 Sub SpellingCorrect()
-' Paul Beverley - Version 12.02.26
+' Paul Beverley - Version 07.04.26
 ' Corrects spelling and wrong capitalisation
 
 elistNameContains = "elist"
 
 useEqualAsDelete = True
 
+okChars = "=',;[" & ChrW(8217)
+
 Selection.Collapse wdCollapseEnd
-wasStart = Selection.Start
+wasStart = Selection.start
 
 Set rng = Selection.Range.Duplicate
-rng.MoveStart , -1
-If rng = " " Then rng.MoveEnd , -1
-rng.Expand wdWord
-rng.Collapse wdCollapseEnd
-If rng.Start > 1 Then
-  ' go past space + apostrophe
+rng.expand wdWord
+If rng.start > 1 Then
   Do
     rng.MoveStart , -1
     ch = Left(rng, 1)
-    Debug.Print "1!" & ch & "!"
     DoEvents
-  Loop Until UCase(ch) <> LCase(ch)
-  rng.Collapse wdCollapseStart
-  rng.MoveEnd , 1
-  Do
-    rng.MoveStart , -1
-    ch = Left(rng, 1)
-    Debug.Print "2!" & ch & "!"
-    DoEvents
-  Loop Until ch = " " Or ch = vbCr
+  Loop Until UCase(ch) = LCase(ch) And InStr(okChars, ch) = 0
   rng.MoveStart , 1
 End If
+
 equalPos = InStr(rng, "=")
 If equalPos > 0 And useEqualAsDelete = True Then
   Set rng2 = rng.Duplicate
-  rng2.Start = rng.Start + equalPos - 2
-  rng2.End = rng.Start + equalPos
+  rng2.start = rng.start + equalPos - 2
+  rng2.End = rng.start + equalPos
   rng2.Delete
   Beep
 End If
@@ -51,15 +41,27 @@ If LCase(rng) = UCase(rng) Then
   Else
     rng.Collapse wdCollapseStart
     rng.MoveEnd , -2
-    rng.Expand wdWord
+    rng.expand wdWord
   End If
 End If
+
+' No non-alpha characters at the end of the word
+Do While InStr(ChrW(8217) & "!?.,;' ", Right(rng.text, 1)) > 0
+  rng.MoveEnd , -1
+  DoEvents
+Loop
+
+' No numbers inside the word
+Do While InStr(ChrW(8217) & "!?.,;' ", Right(rng.text, 1)) > 0
+  rng.MoveEnd , -1
+  DoEvents
+Loop
 
 ' Check capitalisation, e.g. BEverley
 If Len(rng) > 1 Then
   initChar = rng.Characters(1)
   scndChar = rng.Characters(2)
-  lastChar = rng.Characters.Last
+  lastChar = rng.Characters.last
   doBeep = True
   If UCase(initChar) = initChar And UCase(scndChar) = scndChar Then
     doBeep = False
@@ -68,17 +70,14 @@ If Len(rng) > 1 Then
 End If
 If Right(rng, 1) = vbCr Then rng.MoveEnd , -1
 
-' Remove numbers from inside the word
+' Remove numbers, etc from inside the word
 myWord = ""
 For i = 1 To Len(rng)
-  If InStr("0123456789", rng.Characters(i)) = 0 Then
+  If InStr("0123456789" & okChars, rng.Characters(i)) = 0 Then
     myWord = myWord & rng.Characters(i)
   End If
 Next i
-rng.Text = myWord
-
-' Swap ; for an 'l'
-rng.Text = Replace(rng, ";", "l")
+If rng.text <> myWord Then rng.text = myWord
 
 ' Check spelling language
 ' (check only first character, in case of split language)
@@ -101,24 +100,24 @@ End If
 If Not (spellOK) Then
   Set suggList = Application.GetSpellingSuggestions(myWord, _
        MainDictionary:=lang)
-  If suggList.Count > 0 Then
-    newWord = suggList.Item(1).Name
-    If suggList.Count > 1 And LCase(newWord) = myWord _
-         Then newWord = suggList.Item(2).Name
+  If suggList.count > 0 Then
+    newWord = suggList.item(1).Name
+    If suggList.count > 1 And LCase(newWord) = myWord _
+         Then newWord = suggList.item(2).Name
   Else
     newWord = myWord
   End If
   If newWord <> myWord Then
-    rng.Text = newWord
+    rng.text = newWord
   Else
     spellOK = Application.CheckSpelling(myWord, _
          MainDictionary:=lang)
     If spellOK = False Then
       If newWord = myWord Then
         Beep
-        myTime = Timer
+        myTime = timer
         Do
-        Loop Until Timer > myTime + 1
+        Loop Until timer > myTime + 1
         Beep
         If langName = "English (United States)" _
              And Application.CheckSpelling(myWord, _
@@ -134,11 +133,14 @@ If Not (spellOK) Then
 Else
   If doBeep Then Beep
 End If
-rng.Start = wasStart - 2
-rng.Expand wdWord
+rng.start = wasStart - 2
+rng.expand wdWord
 apoPos = InStr(rng, "'")
 If apoPos > 0 Then rng.Characters(apoPos) = ChrW(8217)
 rng.Collapse wdCollapseEnd
 rng.Select
 End Sub
+
+
+
 

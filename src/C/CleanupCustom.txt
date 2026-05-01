@@ -1,0 +1,121 @@
+
+Sub CleanupCustom()
+' Paul Beverley - Version 02.04.26
+' Executes a range of custom clean-up F&Rs
+
+myFandRs = "^s|^32   ~^32{2,}|^32   ^32^t|^t   ^32^p|^p ~([0-9])-([0-9])|\1^=\2"
+myFandRsTracked = "Beverly|Beverley  ¬seperate|separate  per^32cent|percent"
+
+doHighlight = wdYellow
+' Or for no highlight:
+' doHighlight = False
+
+myDo = "TEF"
+If ActiveDocument.Footnotes.Count = 0 Then myDo = Replace(myDo, "F", "")
+If ActiveDocument.Endnotes.Count = 0 Then myDo = Replace(myDo, "E", "")
+
+oldColour = Options.DefaultHighlightColorIndex
+Options.DefaultHighlightColorIndex = doHighlight
+
+myTrack = ActiveDocument.TrackRevisions
+
+myFandRs = Replace(Trim(myFandRs), "  ", " ")
+myFandRs = Replace(myFandRs, "  ", " ")
+thisArray = Split(myFandRs, " ")
+
+myFandRsTracked = Replace(Trim(myFandRsTracked), "  ", " ")
+myFandRsTracked = Replace(myFandRsTracked, "  ", " ")
+trackArray = Split(myFandRsTracked, " ")
+
+On Error GoTo ReportIt
+For myRun = 1 To Len(myDo)
+  doIt = Mid(myDo, myRun, 1)
+  Select Case doIt
+     Case "T": Set rng = ActiveDocument.Content
+     Case "F": Set rng = ActiveDocument.StoryRanges(wdFootnotesStory)
+     Case "E": Set rng = ActiveDocument.StoryRanges(wdEndnotesStory)
+  End Select
+
+  ' First the untracked F&Rs
+  ActiveDocument.TrackRevisions = False
+  For i = 0 To UBound(thisArray)
+    padPos = InStr(thisArray(i), "|")
+    myFind = Left(thisArray(i), padPos - 1)
+    myReplace = Mid(thisArray(i), padPos + 1)
+    If Left(myFind, 1) = ChrW(172) Then
+      doMatchCase = False
+      myFind = Mid(myFind, 2)
+    Else
+      doMatchCase = True
+    End If
+    If Left(myFind, 1) = "~" Then
+      doWild = True
+      myFind = Mid(myFind, 2)
+    Else
+      doWild = False
+    End If
+    With rng.Find
+      .ClearFormatting
+      .Replacement.ClearFormatting
+      .Text = myFind
+      .Replacement.Text = myReplace
+      If doHighlight > 0 Then .Replacement.Highlight = True
+      .Wrap = wdFindContinue
+      .MatchWildcards = doWild
+      .MatchCase = doMatchCase
+      .Execute Replace:=wdReplaceAll
+    End With
+    DoEvents
+  Next i
+  
+  'Now the tracked F&Rs
+  ActiveDocument.TrackRevisions = True
+  For i = 0 To UBound(trackArray)
+    padPos = InStr(trackArray(i), "|")
+    myFind = Left(trackArray(i), padPos - 1)
+    myReplace = Mid(trackArray(i), padPos + 1)
+    If Left(myFind, 1) = ChrW(172) Then
+      doMatchCase = False
+      myFind = Mid(myFind, 2)
+    Else
+      doMatchCase = True
+    End If
+    If Left(myFind, 1) = "~" Then
+      doWild = True
+      myFind = Mid(myFind, 2)
+    Else
+      doWild = False
+    End If
+    With rng.Find
+      .ClearFormatting
+      .Replacement.ClearFormatting
+      .Text = myFind
+      .Replacement.Text = myReplace
+      If doHighlight > 0 Then .Replacement.Highlight = True
+      .Wrap = wdFindContinue
+      .MatchWildcards = doWild
+      .MatchCase = doMatchCase
+      .Execute Replace:=wdReplaceAll
+    End With
+    DoEvents
+  Next i
+Next myRun
+ActiveDocument.TrackRevisions = myTrack
+Options.DefaultHighlightColorIndex = oldColour
+Exit Sub
+
+ReportIt:
+Debug.Print Err.Number
+Beep
+If Err.Number = 5 Then
+  DoEvents
+  myResponse = MsgBox("Error! You must always use ^32 for spaces in your F&R list.", _
+       vbQuestion + vbInformation, "SpacesCleanup")
+  Exit Sub
+Else
+  On Error GoTo 0
+  DoEvents
+  Resume
+End If
+End Sub
+

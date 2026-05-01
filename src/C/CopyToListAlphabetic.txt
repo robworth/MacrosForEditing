@@ -1,6 +1,6 @@
 
 Sub CopyToListAlphabetic()
-' Paul Beverley - Version 21.12.25
+' Paul Beverley - Version 21.04.26
 ' Copies selected text into an alphabetic list file
 
 ' Exact capitalisation (i.e. case sensitive)
@@ -42,10 +42,10 @@ If Selection.Start = Selection.End Then
     Set rng = Selection.Range.Duplicate
     rng.Expand wdWord
     rng.MoveEnd wdWord, 1
-    chkWd = rng.Words.Last
+    chkWd = rng.Words.last
     If chkWd = "-" Then
       rng.MoveEnd wdWord, 2
-      chkWd = rng.Words.Last
+      chkWd = rng.Words.last
       If chkWd = "-" Then
         rng.MoveEnd wdWord, 1
       Else
@@ -115,14 +115,14 @@ With rng.Find
   .MatchCase = True
   .MatchWildcards = True
   .Execute
-  If .Found = False Then
+  If .found = False Then
     .Text = followHeading
     .Execute
   End If
   DoEvents
 End With
 
-If rng.Find.Found = False Then
+If rng.Find.found = False Then
   myResponse = MsgBox("Can't find the heading:" & CR2 & _
        followHeading, vbExclamation + vbOKOnly, "CopyToListAlphabetic")
   If goBackToSource = False Then sSheetDoc.Activate
@@ -144,7 +144,7 @@ With rng.Find
   DoEvents
 End With
 
-If rng.Find.Found = True Then
+If rng.Find.found = True Then
   If beepIfAlreadyListed = True Then Beep
   If goBackToSource = False Then sSheetDoc.Activate
   Exit Sub
@@ -155,10 +155,13 @@ rng.End = sSheetDoc.Content.End
 If LCase(rng) <> UCase(rng) Then
   For i = 1 To rng.Paragraphs.Count
     myNextItem = Replace(rng.Paragraphs(i).Range.Text, vbCr, "")
-    If LCase(myNextItem) > LCase(myText) Or _
-        LCase(myNextItem) = UCase(myNextItem) Then
-      Set rng = rng.Paragraphs(i).Range.Duplicate
-      Exit For
+    theFollowingItem = Replace(rng.Paragraphs(i + 1).Range.Text, vbCr, "")
+    If Len(myNextItem) > 0 Or (myNextItem = "" And theFollowingItem = "") Then
+      If LCase(myNextItem) > LCase(myText) Or _
+          LCase(myNextItem) = UCase(myNextItem) Then
+        Set rng = rng.Paragraphs(i).Range.Duplicate
+        Exit For
+      End If
     End If
   Next i
 End If
@@ -197,4 +200,5 @@ Else
   sSheetDoc.Activate
 End If
 End Sub
+
 

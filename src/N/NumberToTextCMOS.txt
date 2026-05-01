@@ -1,5 +1,6 @@
+
 Sub NumberToTextCMOS()
-' Paul Beverley - Version 29.08.22
+' Paul Beverley - Version 27.03.26
 ' Converts next number into text, using e.g. "fourteen hundred"
 
 oldFind = Selection.Find.Text
@@ -58,10 +59,18 @@ ch1 = rng.Text
 rng.MoveStart , 1
 rng.MoveEnd , 1
 ch2 = rng.Text
-If (UCase(ch1) <> LCase(ch1)) And (UCase(ch2) <> LCase(ch2)) Then
-  Selection.TypeText Text:=" "
+If ch1 = "y" And ch2 = "s" Then
+  rng.MoveStart , -1
+  rng.Text = "ies"
+Else
+  If (UCase(ch1) <> LCase(ch1)) And (UCase(ch2) <> LCase(ch2)) Then
+    Selection.TypeText Text:=" "
+  End If
 End If
 Set rng = ActiveDocument.Range(Start:=startNum - 1, End:=startNum)
 If rng.Text <> " " Then rng.InsertBefore Text:=" "
 End Sub
+
+
+
 
