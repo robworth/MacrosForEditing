@@ -1,6 +1,6 @@
 
 Sub SpacesCleanup()
-' Paul Beverley - Version 09.04.26
+' Paul Beverley - Version 08.05.26
 ' Removes fixed spaces and redundant spaces
 
 doHighlight = 0
@@ -8,7 +8,7 @@ doHighlight = 0
 doTrack = False
 ' doTrack = True
 
-myFandRs = "^s|^32   ~^32{2,}|^32   ^32^t|^t   ^32^p|^p "
+myFandRs = "^s|^32  ^32^0149|^0149  ~^32{2,}|^32   ^32^t|^t   ^t^32|^t   ^32^p|^p   ^p^32|^p "
 
 myDo = "TEF"
 If ActiveDocument.Footnotes.Count = 0 Then myDo = Replace(myDo, "F", "")

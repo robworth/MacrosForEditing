@@ -1,6 +1,6 @@
 
 Sub NumberDecrement()
-' Paul Beverley - Version 20.11.24
+' Paul Beverley - Version 13.05.26
 ' Subtracts one from the next number after the cursor
 
 myJump = -1
@@ -8,18 +8,18 @@ myJump = -1
 goNext = False
 ' goNext = True
 
-trackit = True
+trackIt = True
 
-searchRange = 100
+searchRange = 200
 
-If goNext = True And Selection.start <> _
+If goNext = True And Selection.Start <> _
      Selection.End Then _
      Selection.Collapse wdCollapseStart
 myTrack = ActiveDocument.TrackRevisions
-If trackit = False Then ActiveDocument.TrackRevisions = False
+If trackIt = False Then ActiveDocument.TrackRevisions = False
 
 Set rng = Selection.Range.Duplicate
-rng.End = rng.start + searchRange
+rng.End = rng.Start + searchRange
 
 skipThese = " ." & ChrW(13)
 Do While InStr(skipThese, Left(rng, 1)) > 0
@@ -34,6 +34,7 @@ If Val(rng) = 0 Then
     i = i + 1
     If i = searchRange Then
       Beep
+      rng.Collapse wdCollapseEnd
       rng.Select
       MsgBox ("No number found.")
       Exit Sub
@@ -53,9 +54,11 @@ Do
   myTest = Mid(allText, i, 1)
   DoEvents
 Loop Until Val(myTest) = 0 And myTest <> "0"
-rng.End = rng.start + i - 1
+
+rng.End = rng.Start + i - 1
 rng.Select
 rng.Text = Trim(Str(Val(rng.Text) + myJump))
+
 If goNext = True Then
   Do While Asc(Selection) > 47 And Asc(Selection) < 58
     Selection.MoveRight , 1
@@ -63,6 +66,4 @@ If goNext = True Then
   Call FindFwd
 End If
 End Sub
-
-
 

@@ -1,0 +1,81 @@
+
+Sub LongPrepositionCapitalWarning()
+' Paul Beverley - Version 29.05.26
+' Adds highlight/font colour to long prepositions
+
+prepLongWords = "between, about, among, amongst, while, whilst, behind, toward, towards, through"
+
+myHighlightColour = wdYellow
+' Make = 0 for not highlight
+
+myFontColour = wdColorBlue
+' Make = 0 for no font colour change
+
+' Define a "heading" as a para less than this many words
+maxHeadingWords = 25
+
+If Selection.Start = Selection.End Then
+  Beep
+  Selection.WholeStory
+  myResponse = MsgBox("Highlight prepositions in the whole of this text?", _
+       vbQuestion + vbYesNoCancel, "LongPrepositionCapitalWarning")
+  If myResponse <> vbYes Then Exit Sub
+End If
+
+prepLongWords = "," & Replace(prepLongWords, " ", "")
+myWord = Split(prepLongWords, ",")
+For i = 1 To UBound(myWord)
+  myCount = 0
+  Set rngAll = Selection.Range.Duplicate
+  Debug.Print rngAll
+  wd = myWord(i)
+  With rngAll.Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = myWord(i)
+    .Wrap = wdFindStop
+    .Replacement.Text = ""
+    .Forward = True
+    .MatchCase = True
+    .MatchWildcards = False
+    .MatchWholeWord = False
+    .Execute
+  End With
+  
+  Do While rngAll.Find.found = True
+    myCount = myCount + 1
+    ' Check if it's italic
+    doHighlight = rngAll.Font.Italic
+    
+    If doHighlight = False Then
+      ' Check if it's a short paragraph (= a heading)
+      Set rng = rngAll.Duplicate
+      rng.Expand wdParagraph
+      If rng.Words.Count <= maxHeadingWords Then doHighlight = True
+    End If
+    
+    If doHighlight = False Then
+      ' Check if it's inside quote marks
+      Set rng = rngAll.Duplicate
+      startRng = rng.Start
+      rng.Expand wdParagraph
+      rng.End = startRng
+      If InStr(rng, ChrW(8216)) > 0 Or _
+           InStr(rng, ChrW(8220)) > 0 Then doHighlight = True
+    End If
+
+    If doHighlight = True Then
+      If myHighlightColour > 0 Then _
+           rngAll.HighlightColorIndex = myHighlightColour
+      If myFontColour > 0 Then _
+           rngAll.Font.Color = myFontColour
+    End If
+
+    rngAll.Collapse wdCollapseEnd
+    rngAll.Find.Execute
+    DoEvents
+  Loop
+Next i
+Selection.Collapse wdCollapseEnd
+End Sub
+

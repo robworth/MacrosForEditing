@@ -772,7 +772,7 @@ If myError <= 6 Or (myError > 11 And myError < 17) _
   Selection.Expand wdParagraph
 End If
 Select Case myError
-  Case 2: myPrompt = "No matching replace text"
+  Case 2: myPrompt = "Is there a missing vertical bar?"
           Selection.MoveStart Unit:=wdParagraph, Count:=-1
      '     Selection.Expand wdParagraph
   Case 4: myPrompt = "A 'Count =' line should say 'yes' or 'no'."

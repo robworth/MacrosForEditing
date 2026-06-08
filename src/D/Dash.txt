@@ -15,6 +15,7 @@ oldBits = ";:.,!?-" & ChrW(8212) & ChrW(8211)
 
 Set rng = Selection.Range.Duplicate
 rng.MoveEnd , 50
+If InStr(oldBits, Left(rng, 1)) > 0 Then rng.MoveStart , -1
 For i = 1 To rng.Characters.Count
   If InStr(oldBits, rng.Characters(i)) > 0 Then Exit For
 Next i

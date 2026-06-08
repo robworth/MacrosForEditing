@@ -1,0 +1,81 @@
+
+Sub LanguageSetSelectedMenu()
+' Paul Beverley - Version 12.05.26
+' Changes the language of the (roughly) selected text
+
+Dim keys(5) As String
+Dim myLanguage(5) As Long
+
+myLanguage(1) = wdSpanish
+keys(1) = "s*"
+
+myLanguage(2) = wdItalian
+keys(2) = "i9"
+
+myLanguage(3) = wdFrench
+keys(3) = "f6"
+
+myLanguage(4) = wdGerman
+keys(4) = "g3"
+
+myLanguage(5) = wdEnglishUK
+keys(5) = "e0"
+
+If Selection.Start = Selection.End Then
+  Selection.Expand wdWord
+  If Len(Selection) < 3 Then
+    Selection.Collapse wdCollapseStart
+    Selection.MoveLeft , 1
+    Selection.Expand wdWord
+  End If
+  Do While InStr(ChrW(8217) & "' ", Right(Selection.Text, 1)) > 0
+    Selection.MoveEnd , -1
+    DoEvents
+  Loop
+Else
+  endNow = Selection.End
+  Selection.MoveLeft wdWord, 1
+  startNow = Selection.Start
+  Selection.End = endNow
+  Selection.Expand wdWord
+  Do While InStr(ChrW(8217) & "' ", Right(Selection.Text, 1)) > 0
+    Selection.MoveEnd , -1
+    DoEvents
+  Loop
+  Selection.Start = startNow
+End If
+
+Set rng = Selection.Range.Duplicate
+
+myDelay = 0.9
+t = Timer
+Selection.Collapse wdCollapseStart
+posWas = Selection.Start
+Do
+  DoEvents
+  posNow = Selection.Start
+Loop Until posNow <> posWas Or Timer - t > myDelay
+If posNow <> posWas Then
+  Selection.MoveStart , -1
+  myChar = Selection
+  WordBasic.EditUndo
+Else
+  Beep
+  MsgBox "Too slow!!! Try again, please."
+  rng.Select
+  Exit Sub
+End If
+
+For i = 1 To 5
+  If InStr(LCase(keys(i)), myChar) > 0 Then Exit For
+Next i
+If i > 5 Then
+  Beep
+  MsgBox "Not a recognised key! Try again, please."
+  rng.Select
+  Exit Sub
+End If
+rng.LanguageID = myLanguage(i)
+End Sub
+
+

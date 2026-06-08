@@ -1,14 +1,18 @@
 
 Sub HighlightOffNext()
-' Paul Beverley - Version 26.03.25
-' Unhighlights the next area of highlighting
+' Paul Beverley - Version 26.05.26
+' Unhighlights the (present or) next area of highlighting
 
 doTrack = False
-Selection.Expand wdWord
+
 Selection.Collapse wdCollapseStart
+Do
+  Selection.MoveLeft , 1
+  DoEvents
+Loop Until Selection.Range.HighlightColorIndex = wdNoHighlight
+
 myTrack = ActiveDocument.TrackRevisions
 If doTrack = False Then ActiveDocument.TrackRevisions = False
-Selection.Collapse wdCollapseEnd
 With Selection.Find
   .ClearFormatting
   .Replacement.ClearFormatting
