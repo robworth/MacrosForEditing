@@ -1,39 +1,46 @@
+
 Sub TrackAcceptMoveOn()
-' Paul Beverley - Version 19.02.22
+' Paul Beverley - Version 02.10.26
 ' Accepts change and moves to the next
 
 addHighlight = False
 myColour = wdYellow
-addColour = True
+addColour = False
 myFontColour = wdRed
 
-On Error GoTo ReportIt
-If Selection.Start <> Selection.End Then
-  myTrack = ActiveDocument.TrackRevisions
-  ActiveDocument.TrackRevisions = False
+Set doc = ActiveDocument
+Set rng = Selection.Range
+' If a tracked change is selected, accept it and move on
+If rng.Revisions.Count > 0 Then
+  Set rev = rng.Revisions(1)
   If addHighlight = True Then _
-       Selection.Range.HighlightColorIndex = myColour
+       rng.HighlightColorIndex = myColour
   If addColour = True Then _
-       Selection.Range.Font.ColorIndex = myFontColour
-  ActiveDocument.TrackRevisions = myTrack
+       rng.Font.ColorIndex = myFontColour
+  curPos = rev.Range.End   ' remember position before accepting
+  rev.Accept
+Else
+  ' If nothing (or no change) is selected, start from current cursor
+  curPos = rng.End
 End If
-hereNow = Selection.Start
-Application.Run MacroName:="AcceptChangesSelected"
-i = 0
-Do
-  hereNow = Selection.Start
-  Application.Run MacroName:="NextChangeOrComment"
-  inAComment = Selection.Information(wdInCommentPane)
-  DoEvents
-  i = i + 1
-Loop Until Not inAComment Or i > 10
-If Selection.Start < hereNow Or i > 10 Then Beep
-Exit Sub
 
-ReportIt:
-On Error GoTo 0
-Application.Run MacroName:="NextChangeOrComment"
-If Selection.Start < hereNow And _
-     Selection.Start > 0 Then Beep
+' Find the next revision after curPos
+myFound = False
+For Each rev In doc.Revisions
+  If rev.Range.Start >= curPos Then
+    rev.Range.Select
+    myFound = True
+    Exit For
+  End If
+Next rev
+
+' If none ahead, wrap to the first revision (if any)
+If Not myFound Then
+  If doc.Revisions.Count > 0 Then
+    doc.Revisions(1).Range.Select
+  Else
+    MsgBox "No tracked changes found.", vbInformation
+  End If
+End If
 End Sub
 

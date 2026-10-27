@@ -1,17 +1,16 @@
 
 Sub PastePureAndFRedit()
-' Paul Beverley - Version 01.03.26
+' Paul Beverley - Version 09.03.26
 ' Pastes text only to the current file, then FRedits the new text
 
 ' To force text into a specific style:
-forceNewStyle = True
 newStyle = "Normal"
+forceNewStyle = True
 
 ' to keep current text style, use
-' forceNewStyle = False
+forceNewStyle = False
 
 ' Provide here the full address of your FRedit list
-
 ' On Windows, it will need to be something like:
 myFReditList = "C:\Documents and Settings\Paul\My Documents\Macro stuff\myFReditList.docx"
 
@@ -19,12 +18,13 @@ myFReditList = "C:\Documents and Settings\Paul\My Documents\Macro stuff\myFRedit
 myFReditList = "/Users/Paul/My Documents/Macro stuff/myFReditList.docx"
 
 
+On Error GoTo ReportIt
 myStart = Selection.Start
 Selection.PasteSpecial DataType:=wdPasteText
 
 Selection.Start = myStart
 If forceNewStyle = True Then
-  Selection.Style = ActiveDocument.Styles("newStyle")
+  Selection.Style = ActiveDocument.Styles(newStyle)
 End If
 
 Set thisDoc = ActiveDocument
@@ -35,6 +35,18 @@ For i = 1 To 30
 Next i
 thisDoc.Activate
 Application.Run macroName:="FRedit"
-End Sub
+Exit Sub
 
+ReportIt:
+If Err.Number = 4605 Then
+  Beep
+  myResponse = MsgBox("Please select some text.", _
+       vbInformation, "PastePureAndFRedit")
+  Exit Sub
+Else
+  On Error GoTo 0
+  DoEvents
+  Resume
+End If
+End Sub
 

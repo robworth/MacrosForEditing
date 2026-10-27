@@ -1,0 +1,85 @@
+
+Sub BibleRefNext()
+' Paul Beverley - Version 05.08.26
+' Jumps to the next Bible reference
+
+abbr = "!Gen !Exod !Ex !Lev !Num !Nm !Deut !Dt" & _
+"!Josh !Judg !Ruth !Sam !Kgs !Chr !Ezra !Neh !Esth" & _
+"!Job !Ps !Prov !Eccl !Ecc !Song !Isa !Jer" & _
+"!Lam !Ezek !Dan !Hos !Joel !Amos !Obad !Jonah" & _
+"!Mic !Nah !Hab !Zeph !Hag !Zech !Mal" & _
+"!Matt !Mt !Mark !Mk !Luke !Lk !John !Jn !Acts" & _
+"!Rom !Cor !Gal !Eph !Phil !Col !Thess !Tim" & _
+"!Titus !Phlm !Heb !Jas !Pet !Jn !Jude !Rev"
+abbr = abbr & _
+"!Genesis !Exodus !Leviticus !Numbers !Deuteronomy" & _
+"!Joshua !Judges !Ruth !Samuel !Kings !Chronicles" & _
+"!Ezra !Nehemiah !Esther !Job !Psalms !Psalm !Proverbs" & _
+"!Ecclesiastes !Song of Solomon !Isaiah !Jeremiah" & _
+"!Lamentations !Ezekiel !Daniel !Hosea !Joel !Amos" & _
+"!Obadiah !Jonah !Micah !Nahum !Habakkuk !Zephaniah" & _
+"!Haggai !Zechariah !Malachi !Matthew !Mark !Luke" & _
+"!John !Acts !Romans !Corinthians !Galatians !Ephesians" & _
+"!Philippians !Colossians !Thessalonians !Timothy !Titus" & _
+"!Philemon !Hebrews !James !Peter !John !Jude !Revelation"
+
+' Characters that may form part of a reference
+punct = ":.,-" & ChrW(8211)
+
+Selection.Collapse wdCollapseEnd
+Set rng = Selection.Range.Duplicate
+rng.End = ActiveDocument.Content.End
+
+abbr = Replace(abbr, " ", "") & "!"
+punct = punct & " 0123456789"
+numb = "123"
+
+With rng.Find
+  .ClearFormatting
+  .Replacement.ClearFormatting
+  .Text = "[A-Z][a-z]{1,}"
+  .Wrap = wdFindStop
+  .Replacement.Text = ""
+  .Forward = True
+  .MatchWildcards = True
+  .MatchWholeWord = False
+  .Execute
+End With
+
+Do While rng.Find.found = True
+  i = i + 1
+  If i Mod 20 = 0 Then DoEvents: rng.Select
+  If InStr(abbr, "!" & rng.Text & "!") > 0 Then
+    rng.MoveEnd , -1
+    rng.MoveEnd wdWord, 1
+    rng.Select
+    myStart = rng.Start
+    myEnd = rng.End
+    gotNumb = False
+    rng.MoveStart , -1
+    If InStr(numb, Left(rng.Text, 1)) > 0 Then
+      gotNumb = True
+    Else
+      rng.MoveStart , -1
+      If InStr(numb, Left(rng.Text, 1)) > 0 Then gotNumb = True
+    End If
+    If gotNumb = False Then rng.Start = myStart
+    Do
+      rng.MoveEnd , 1
+    Loop Until InStr(punct, Right(rng.Text, 1)) = 0
+    rng.MoveEnd , -1
+    If InStr(":;,. ", Right(rng.Text, 1)) > 0 Then rng.MoveEnd , -1
+    If InStr(":;,. ", Right(rng.Text, 1)) > 0 Then rng.MoveEnd , -1
+    lastChar = rng.Characters.last
+    If UCase(lastChar) = LCase(lastChar) Then
+      rng.Select
+      Exit Sub
+    End If
+  End If
+  rng.Collapse wdCollapseEnd
+  rng.Find.Execute
+Loop
+End Sub
+
+
+

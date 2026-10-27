@@ -1,19 +1,31 @@
+
 Sub SortIt()
-' Paul Beverley - Version 02.11.19
-' Sort the selected text
+' Paul Beverley - Version 09.08.26
+' Sorts the selected text (or the whole text)
 
 anyCase = False
-promptForWholeText = False
+promptForWholeText = True
 
-If Selection.End = Selection.Start And promptForWholeText _
-     = True Then
-  myResponse = MsgBox("Sort the WHOLE file?", _
-       vbQuestion + vbYesNo)
-  If myResponse = vbNo Then Exit Sub
-  Selection.WholeStory
+If Selection.End = Selection.Start Then
+  Set rng = ActiveDocument.Content
+  If promptForWholeText = True Then
+    myResponse = MsgBox("Sort the WHOLE file?", _
+         vbQuestion + vbYesNo)
+    If myResponse = vbNo Then Exit Sub
+  End If
+Else
+  Set rng = Selection.Range.Duplicate
 End If
-Selection.Sort ExcludeHeader:=False, FieldNumber:="Paragraphs", _
+rng.Sort ExcludeHeader:=False, FieldNumber:="Paragraphs", _
      CaseSensitive:=Not (anyCase), SortOrder:=wdSortOrderAscending, _
     SortFieldType:=wdSortFieldAlphanumeric
+' Remove blank lines at the top
+  rng.InsertAfter Text:=vbCr
+  rng.Collapse wdCollapseStart
+  rng.MoveEnd wdParagraph, 1
+  Do While rng.Text = vbCr
+    rng.Paragraphs(1).Range.Delete
+    rng.MoveEnd wdParagraph, 1
+  Loop
 End Sub
 

@@ -1,0 +1,56 @@
+
+Sub SurnameSorterWithParens()
+' Paul Beverley - Version 20.07.26
+' Sorts the current list by the word before "(" or, if none, the final word
+
+Set rng = Selection.Range.Duplicate
+Do
+  rng.MoveStart wdParagraph, -1
+  rng.Collapse wdCollapseStart
+  DoEvents
+Loop Until rng.Style = "Heading 3"
+rng.Expand wdParagraph
+rng.Collapse wdCollapseEnd
+paraNum = 0
+Do
+  gotEnd = False
+  rng.MoveEnd wdParagraph, 1
+  paraNum = paraNum + 1
+  If rng.End = ActiveDocument.Range.End Then
+    gotEnd = True
+    rng.InsertAfter Text:=vbCr
+    rng.MoveEnd , 1
+  End If
+  If gotEnd = False Then
+    If rng.Paragraphs(paraNum).Range.Words.Count < 2 Then gotEnd = True
+  End If
+  DoEvents
+Loop Until gotEnd = True
+For Each myPara In rng.Paragraphs
+  Debug.Print myPara.Range
+  If Len(myPara) < 2 Then Exit For
+  mySurname = ""
+  For i = 3 To myPara.Range.Words.Count - 1
+    wd = myPara.Range.Words(i)
+    Debug.Print wd
+    If Left(wd, 1) = "(" Then
+      mySurname = myPara.Range.Words(i - 1)
+      Exit For
+    End If
+  Next i
+  If mySurname = "" Then mySurname = myPara.Range.Words(i - 1)
+  myPara.Range.InsertBefore Text:=Trim(mySurname) & " "
+  DoEvents
+Next myPara
+
+rng.Sort
+rng.Characters(1).Delete
+rng.InsertAfter Text:=vbCr
+For Each myPara In rng.Paragraphs
+Debug.Print myPara.Range.Text
+  If Len(myPara.Range.Words(1)) > 2 Then myPara.Range.Words(1).Delete
+Next myPara
+rng.Characters(1).Delete
+End Sub
+
+

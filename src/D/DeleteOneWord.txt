@@ -1,8 +1,7 @@
 
 Sub DeleteOneWord()
-' Paul Beverley - Version 01.11.25
-' Deletes current word, but no punctuation
-' (was called DeleteWord)
+' Paul Beverley - Version 05.10.26
+' Deletes current word, but not punctuation
 
 If InStr(",.!;:" & vbCr, Selection) > 0 Then Selection.MoveLeft , 1
 If Selection = " " Then Selection.MoveRight , 1
@@ -46,11 +45,13 @@ If rng.Start > 2 Then
                 rng.MoveEnd , -1
     Case Else: Beep: myTest = ""
   End Select
+  delPos = rng.Start
+  delEnd = rng.End
   If myTest > "" Then rng.Delete
 Else
   rng.Delete
 End If
-
+ 
 If Selection = " " Then
   Selection.MoveEnd , 1
   Selection.Delete
@@ -58,7 +59,7 @@ End If
 If isSentStart = True Then
   Set rng = Selection.Range.Duplicate
   rng.Expand wdWord
-  rng.Collapse wdCollapseEnd
+  rng.Collapse wdCollapseStart
   rng.MoveEnd , 1
   If rng = "," Then
     rng.Delete

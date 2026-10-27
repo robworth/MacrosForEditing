@@ -1,6 +1,6 @@
 
 Sub BibleGatewayFetch()
-' Paul Beverley - Version 12.08.25
+' Paul Beverley - Version 14.08.26
 ' Launches Bible references on BibleGateway
 
 mySite = "https://www.biblegateway.com/passage/?search="
@@ -25,8 +25,9 @@ If Selection.Start = Selection.End Then
     If LCase(myChar) <> UCase(myChar) Then Selection.MoveEnd , -1
     DoEvents
   Loop
-  Do While InStr(".,): """ & ChrW(8220) & ChrW(8221) & ChrW(8216) & ChrW(8217), _
-       Selection.Characters.Last) > 0
+  Do While InStr(".,!?/=*): """ & ChrW(2) & ChrW(13) & ChrW(60) & ChrW(8220) & _
+       ChrW(8212) & ChrW(8220) & ChrW(8221) & _
+       ChrW(8216) & ChrW(8217) & ChrW(8226), Selection.Characters.last) > 0
     Selection.MoveEnd , -1
   Loop
 Else

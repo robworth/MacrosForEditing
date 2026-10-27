@@ -1,6 +1,6 @@
 
 Sub NumberIncrement()
-' Paul Beverley - Version 13.05.26
+' Paul Beverley - Version 23.10.26
 ' Adds one to the next number after the cursor
 
 myJump = 1
@@ -12,24 +12,25 @@ trackIt = True
 
 searchRange = 200
 
-If goNext = True And Selection.start <> _
+If goNext = True And Selection.Start <> _
      Selection.End Then _
      Selection.Collapse wdCollapseStart
 myTrack = ActiveDocument.TrackRevisions
 If trackIt = False Then ActiveDocument.TrackRevisions = False
 
 Set rng = Selection.Range.Duplicate
-rng.End = rng.start + searchRange
+rng.End = rng.Start + searchRange
 
 skipThese = " ." & ChrW(13)
 Do While InStr(skipThese, Left(rng, 1)) > 0
   rng.MoveStart , 1
+  DoEvents
 Loop
 
 ' Move selection to start of any number
 If Val(rng) = 0 Then
   i = 0
-  allText = rng.text
+  allText = rng.Text
   Do
     i = i + 1
     If i = searchRange Then
@@ -48,16 +49,40 @@ End If
 
 ' Find end of number and increment (decrease) it
 i = 0
-allText = rng.text
+allText = rng.Text
 Do
   i = i + 1
   myTest = Mid(allText, i, 1)
   DoEvents
 Loop Until Val(myTest) = 0 And myTest <> "0"
 
-rng.End = rng.start + i - 1
+rng.End = rng.Start + i - 1
+
+' Check for ordinal
+rng.MoveEnd , 2
+ord = Right(rng, 2)
+allOrds = "thrdndst"
+newNumber = Val(rng.Text) + myJump
+lastTwoDigits = Right(Trim(Str(newNumber)), 2)
+lastDigit = Right(lastTwoDigits, 1)
 rng.Select
-rng.text = Trim(Str(Val(rng.text) + myJump))
+If InStr(allOrds, ord) > 0 Then
+  newOrd = "th"
+  Select Case lastDigit
+    Case "1": newOrd = "st"
+    Case "2": newOrd = "nd"
+    Case "3": newOrd = "rd"
+  End Select
+  Select Case lastTwoDigits
+    Case "11", "12", "13": newOrd = "th"
+  End Select
+Else
+  rng.MoveEnd , -2
+  ord = ""
+End If
+rng.Select
+
+rng.Text = Trim(Str(newNumber)) & newOrd
 
 If goNext = True Then
   Do While Asc(Selection) > 47 And Asc(Selection) < 58

@@ -1,11 +1,23 @@
 
 Sub CommentCollector()
-' Paul Beverley - Version 26.08.25
+' Paul Beverley - Version 14.08.26
 ' Creates a table of all comments
 
+
 doLandscape = True
-myResponseSpace = 20
-titleSize = 16
+myResponseSpace = 30
+
+Dim myCol(10) As String
+myCol(1) = "number #"
+myCol(2) = "scope Scope"
+myCol(3) = "comment Comment"
+myCol(4) = "page Pg"
+myCol(5) = "author Name"
+myCol(6) = "response Author response"
+totCols = 6
+
+' To spread the number column
+myCol(1) = myCol(1) & ChrW(160) & ChrW(160)
 
 myResponse = MsgBox("Include formatting? (Takes 2-3 times as long.)", _
      vbQuestion + vbYesNoCancel, "CommentCollector")
@@ -14,30 +26,42 @@ includeFormatting = (myResponse = vbYes)
 
 t = Timer
 
-Dim myCol(10) As String
-myCol(1) = "number #"
-myCol(2) = "scope Scope"
-myCol(3) = "comment Comment"
-myCol(4) = "page Pg"
-myCol(5) = "author Commenter name"
-myCol(6) = "response Author response"
-totCols = 6
-
-CR = vbCr
-TB = vbTab
-Set src = ActiveDocument
-Application.ScreenUpdating = False
-On Error GoTo ReportIt
-
-Documents.Add
-If doLandscape = True Then Selection.PageSetup.Orientation = wdOrientLandscape
-
 ' Build up a space-reserving text
 numExtra = myResponseSpace - 8
 If numExtra < 1 Then numExtra = 1
 For i = 1 To numExtra
   extraSpace = extraSpace & " " & ChrW(160)
 Next i
+
+Set myDoc = ActiveDocument
+gotFunnyComments = False
+numCmnts = myDoc.Comments.Count
+StatusBar = extraSpace & "Reading page number of comments"
+ReDim pg(numCmnts) As Integer
+For i = 1 To numCmnts
+  Set cmt = myDoc.Comments(i)
+  Set rng = myDoc.Range(0, cmt.Scope.End)
+  pg(i) = rng.ComputeStatistics(wdStatisticPages)
+  DoEvents
+  StatusBar = extraSpace & extraSpace & _
+        "Reading page number of comments: " & i
+Next i
+
+Set rngOld = myDoc.Content
+Set src = Documents.Add
+Set rng = src.Content
+rng.FormattedText = rngOld.FormattedText
+
+numCmnts = src.Comments.Count
+
+CR = vbCr
+TB = vbTab
+Application.ScreenUpdating = False
+' On Error GoTo ReportIt
+
+Set resultsFile = Documents.Add
+If doLandscape = True Then Selection.PageSetup.Orientation = wdOrientLandscape
+Set rng = resultsFile.Content
 
 For j = 1 To totCols
   myHead = myCol(j)
@@ -46,13 +70,12 @@ For j = 1 To totCols
   myHead = Mid(myHead, spPos + 1)
   If myHead = "blank" Then myHead = ""
   If addExtra Then myHead = myHead & extraSpace
-  Selection.TypeText myHead & TB
+  rng.InsertAfter Text:=myHead & TB
 Next j
 
-Selection.MoveStart , -1
-Selection.TypeText CR
+rng.InsertAfter Text:=CR
 
-For i = 1 To src.Comments.Count
+For i = 1 To numCmnts
   For j = 1 To totCols
     doWhat = myCol(j)
     spPos = InStr(doWhat, " ")
@@ -60,57 +83,88 @@ For i = 1 To src.Comments.Count
     
     Select Case LCase(doWhat)
       Case "number":
-        Selection.InsertAfter Text:=src.Comments(i).Index & TB
-        Selection.Style = ActiveDocument.Styles("Normal")
-        Selection.Collapse wdCollapseEnd
+        rng.Collapse wdCollapseEnd
+        rng.InsertAfter Text:=src.Comments(i).Index & TB
+        rng.Style = ActiveDocument.Styles("Normal")
       Case "comment":
-        Set rng = src.Comments(i).Range
+        Set cmnt = src.Comments(i).Range
         If includeFormatting = True Then
-          With rng.Find
+          With cmnt.Find
             .ClearFormatting
             .Replacement.ClearFormatting
-            .Text = "^p"
+            .Text = "^11"
             .Wrap = wdFindContinue
+            .Wrap = wdFindStop
             .Forward = True
-            .Replacement.Text = "zczc"
+            .Replacement.Text = "zc pq"
             .MatchWildcards = False
             .Execute Replace:=wdReplaceAll
-            DoEvents
-         rng.Copy
-            .Text = "zczc"
-            .Replacement.Text = "^p"
+            .Text = "^p"
             .Execute Replace:=wdReplaceAll
+            DoEvents
           End With
-          Selection.Paste
+          DoEvents
+          rng.Collapse wdCollapseEnd
+          rng.FormattedText = cmnt.FormattedText
         Else
-          myText = Replace(src.Comments(i).Range.Text, vbCr, "zczc")
-          Selection.TypeText Text:=myText
+          myText = Replace(cmnt.Text, vbCr, "zc pq")
+          myText = Replace(myText, ChrW(11), "zc pq")
+          rng.Collapse wdCollapseEnd
+          rng.InsertAfter Text:=myText
         End If
-        Selection.TypeText Text:=TB
+        rng.InsertAfter Text:=TB
       Case "author"
-        Selection.InsertAfter Text:=src.Comments(i).Contact & TB
-        Selection.Style = ActiveDocument.Styles("Normal")
-        Selection.Collapse wdCollapseEnd
+        rng.Collapse wdCollapseEnd
+        rng.InsertAfter Text:=src.Comments(i).Contact & TB
+        rng.Style = ActiveDocument.Styles("Normal")
       Case "scope"
-        Selection.InsertAfter Text:=src.Comments(i).Scope & TB
-        Selection.Style = ActiveDocument.Styles("Normal")
-        Selection.Collapse wdCollapseEnd
+        Set cmnt = src.Comments(i).Scope
+        numTables = rng.Tables.Count
+        If includeFormatting = True And numTables = 0 Then
+          With cmnt.Find
+            .ClearFormatting
+            .Replacement.ClearFormatting
+            .Text = "^11"
+            .Wrap = wdFindContinue
+            .Forward = True
+            .Replacement.Text = "zc pq"
+            .MatchWildcards = False
+            .Text = "^p"
+            .Execute Replace:=wdReplaceAll
+            DoEvents
+          End With
+          DoEvents
+          rng.Collapse wdCollapseEnd
+          rng.FormattedText = cmnt.FormattedText
+        Else
+          myText = src.Comments(i).Scope.Text
+          myText = Replace(myText, TB, " ")
+          myText = Replace(myText, CR, "zc pq")
+          myText = Replace(myText, " zc pq", "zc pq")
+          myText = Replace(myText, "zc pq ", "zc pq")
+          myText = Replace(myText, "zc pqzc pq", "zc pq")
+          myText = Replace(myText, "zc pqzc pq", "zc pq")
+          rng.Collapse wdCollapseEnd
+          rng.InsertAfter Text:=myText
+          rng.Style = ActiveDocument.Styles("Normal")
+        End If
+        rng.InsertAfter Text:=TB
+
       Case "page"
         Set scp = src.Comments(i).Scope
-        pg = Trim(Str(scp.Information(wdActiveEndAdjustedPageNumber)))
-        Selection.InsertAfter Text:=pg & TB
-        Selection.Style = ActiveDocument.Styles("Normal")
-        Selection.Collapse wdCollapseEnd
+        thisPage = Trim(Str(pg(i))) & TB
+        rng.Collapse wdCollapseEnd
+        rng.InsertAfter Text:=thisPage
     End Select
   Next j
   DoEvents
-  Selection.TypeText Text:=CR
+  rng.Collapse wdCollapseEnd
+  rng.InsertAfter Text:=CR
+  StatusBar = extraSpace & extraSpace & "To go: " & _
+       numCmnts - i
 Next i
 
-If Asc(Right(src.Comments(src.Comments.Count).Range.Text, 1)) = 13 Then
-  src.Comments(src.Comments.Count).Range.Characters.Last = ""
-End If
-Set rng = ActiveDocument.Content
+Set rng = resultsFile.Content
 With rng.Find
   .ClearFormatting
   .Replacement.ClearFormatting
@@ -118,35 +172,41 @@ With rng.Find
   .Replacement.Text = "^p"
   .MatchWildcards = False
   .Execute Replace:=wdReplaceAll
+  
+  ' To split up long URLs in columns
+  .Text = "%"
+  .Replacement.Text = "% "
+  .Execute Replace:=wdReplaceAll
   DoEvents
 End With
 
-Selection.HomeKey Unit:=wdStory
-Selection.TypeText "Comments summary" & CR
+If resultsFile.Comments.Count > 0 Then resultsFile.DeleteAllComments
 
-Set rng = ActiveDocument.Content
-rng.Start = Selection.End
-ActiveDocument.Paragraphs(1).Style = _
-     ActiveDocument.Styles(wdStyleHeading1)
-ActiveDocument.Paragraphs(2).Range.Font.Bold = True
-ActiveDocument.Paragraphs(2).Range.Font.Size = titleSize
+rng.InsertBefore Text:="Comments summary" & CR
 
+resultsFile.Paragraphs(1).Style = _
+     resultsFile.Styles(wdStyleHeading1)
+resultsFile.Paragraphs(2).Range.Font.Bold = True
+rng.MoveStart wdParagraph, 1
 rng.ConvertToTable Separator:=wdSeparateByTabs
 rng.Tables(1).Style = "Table Grid"
 rng.Tables(1).AutoFitBehavior (wdAutoFitContent)
+
 With rng.Find
-  .Text = "zczc"
-  .Replacement.Text = "^l"
+  .Text = "zc pqzc pq"
+  .Replacement.Text = "^11"
   .MatchWildcards = False
   .Execute Replace:=wdReplaceAll
-  
-  .Text = blankItem
-  .Replacement.Text = ""
+  .Text = "zc pq"
+  .Replacement.Text = "^11"
+  .MatchWildcards = False
   .Execute Replace:=wdReplaceAll
   DoEvents
 End With
+src.Close SaveChanges:=False
+resultsFile.Activate
 Application.ScreenUpdating = True
-MsgBox "Time: " & Str(Int(Timer - t)) & " secs"
+myPrompt = "Time: " & Str(Int(Timer - t)) & " secs"
 Exit Sub
 
 ReportIt:
@@ -154,4 +214,7 @@ Application.ScreenUpdating = True
 On Error GoTo 0
 Resume
 End Sub
+
+
+
 

@@ -1,20 +1,22 @@
 
 Sub FootnoteEndnoteFiddle()
-' Paul Beverley - Version 11.08.24
+' Paul Beverley - Version 06.03.26
 ' Tidies up start/end of each footnote or endnote
 
 addFullStop = False
-noteNumberNotSuperscript = True
+noteNumberNotSuperscript = False
+' removeLeadingSpace = True
+removeLeadingSpace = False
 
 Set rngWas = Selection.Range.Duplicate
 For myRun = 1 To 2
   numNotes = 0
   If myRun = 1 Then
-    numNotes = ActiveDocument.Footnotes.Count
+    numNotes = ActiveDocument.Footnotes.count
   Else
     myRun = 2
   End If
-  If myRun = 2 Then numNotes = ActiveDocument.Endnotes.Count
+  If myRun = 2 Then numNotes = ActiveDocument.Endnotes.count
   For i = 1 To numNotes
     If myRun = 1 Then
       Set rng = ActiveDocument.Footnotes(i).Range
@@ -26,13 +28,15 @@ For myRun = 1 To 2
     Selection.Collapse wdCollapseStart
     Selection.HomeKey wdLine
     If noteNumberNotSuperscript = True Then
-     Selection.MoveEnd , 1
-     Selection.Range.Font.Superscript = False
-     Selection.Collapse wdCollapseStart
+      Selection.MoveEnd , 1
+      Selection.Range.Font.Superscript = False
+      Selection.Collapse wdCollapseStart
     End If
-    Selection.MoveStart , 1
-    Selection.End = Selection.start + 1
-    If Selection.Text = " " Then Selection.Delete
+    If removeLeadingSpace = True Then
+      Selection.MoveStart , 1
+      Selection.End = Selection.start + 1
+      If Selection.text = " " Then Selection.Delete
+    End If
     
   ' Remove trailing 'things'
     rng.Collapse wdCollapseEnd
@@ -51,11 +55,13 @@ For myRun = 1 To 2
         rng.MoveStart , -1
         rng.MoveEnd , -1
       End If
-      If UCase(rng) <> LCase(rng) Then rng.InsertAfter Text:="."
+      If UCase(rng) <> LCase(rng) Then rng.InsertAfter text:="."
       DoEvents
     End If
   Next i
 Next myRun
 rngWas.Select
 End Sub
+
+
 

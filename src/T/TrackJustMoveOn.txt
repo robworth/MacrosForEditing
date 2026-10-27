@@ -1,0 +1,39 @@
+
+Sub TrackJustMoveOn()
+' Paul Beverley - Version 25.07.26
+' Just moves on to the next track change
+
+addHighlight = False
+myColour = wdYellow
+addColour = False
+myFontColour = wdRed
+
+On Error GoTo ReportIt
+If Selection.Start <> Selection.End Then
+  myTrack = ActiveDocument.TrackRevisions
+  ActiveDocument.TrackRevisions = False
+  If addHighlight = True Then _
+       Selection.Range.HighlightColorIndex = myColour
+  If addColour = True Then _
+       Selection.Range.Font.ColorIndex = myFontColour
+  ActiveDocument.TrackRevisions = myTrack
+End If
+hereNow = Selection.Start
+i = 0
+Do
+  hereNow = Selection.Start
+  Application.Run macroName:="NextChangeOrComment"
+  inAComment = Selection.Information(wdInCommentPane)
+  DoEvents
+  i = i + 1
+Loop Until Not inAComment Or i > 10
+If Selection.Start < hereNow Or i > 10 Then Beep
+Exit Sub
+
+ReportIt:
+On Error GoTo 0
+Application.Run macroName:="NextChangeOrComment"
+If Selection.Start < hereNow And _
+     Selection.Start > 0 Then Beep
+End Sub
+

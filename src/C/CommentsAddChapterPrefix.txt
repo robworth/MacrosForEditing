@@ -1,0 +1,49 @@
+
+Sub CommentsAddChapterPrefix()
+' Paul Beverley - Version 03.10.26
+' Adds "Chapter x: " at the beginning of each comment
+
+myHeadingStyle = "Heading 1"
+    
+For Each c In ActiveDocument.Comments
+  ' Check if comment already starts with "Chapter"
+  commentStart = Left$(Trim$(c.Range.Text), 7)
+  If LCase$(commentStart) <> "chapter" Then
+    headingFound = False
+    chapText = ""
+    
+    ' Search backwards from the comment's scope
+    Set rng = c.Scope.Duplicate
+    rng.Collapse Direction:=wdCollapseStart
+    rng.Expand wdParagraph
+    Do While rng.Start > 0 And Not headingFound
+      rng.MoveStart wdParagraph, -1
+      ' Check if we crossed into a paragraph boundary
+      Set para = rng.Paragraphs(1)
+      If para.Style = ActiveDocument.Styles(wdStyleHeading1) Then
+        ' Look for text like "Chapter 3"
+        If LCase$(Left$(Trim$(para.Range.Text), 7)) = "chapter" Then
+            chapText = Replace(para.Range.Text, vbCr, "")
+            headingFound = True
+        End If
+      End If
+      DoEvents
+    Loop
+    
+    ' If found, prefix the comment
+    If headingFound And chapText <> "" Then
+        c.Range.InsertBefore chapText & ": "
+    End If
+  End If
+  i = i + 1
+  If i Mod 10 = 0 Then
+    c.Scope.Select
+    StatusBar = "                                   " & chapText
+  End If
+Next c
+DoEvents
+Beep
+StatusBar = "                                   "
+MsgBox "Comments updated."
+End Sub
+

@@ -1,20 +1,26 @@
 
 Sub SpellingCorrect()
-' Paul Beverley - Version 07.04.26
+' Paul Beverley - Version 05.10.26
 ' Corrects spelling and wrong capitalisation
 
 elistNameContains = "elist"
 
 useEqualAsDelete = True
 
-okChars = "=',;[" & ChrW(8217)
+okChars = "=',;[0123456789" & ChrW(8217)
 
 Selection.Collapse wdCollapseEnd
-wasStart = Selection.start
-
+wasStart = Selection.Start
 Set rng = Selection.Range.Duplicate
-rng.expand wdWord
-If rng.start > 1 Then
+startNow = rng.Start
+rng.Expand wdWord
+If rng.Start = startNow Then
+  rng.Collapse wdCollapseStart
+  rng.MoveEnd , -2
+  rng.Expand wdWord
+End If
+
+If rng.Start > 1 Then
   Do
     rng.MoveStart , -1
     ch = Left(rng, 1)
@@ -26,8 +32,8 @@ End If
 equalPos = InStr(rng, "=")
 If equalPos > 0 And useEqualAsDelete = True Then
   Set rng2 = rng.Duplicate
-  rng2.start = rng.start + equalPos - 2
-  rng2.End = rng.start + equalPos
+  rng2.Start = rng.Start + equalPos - 2
+  rng2.End = rng.Start + equalPos
   rng2.Delete
   Beep
 End If
@@ -41,18 +47,18 @@ If LCase(rng) = UCase(rng) Then
   Else
     rng.Collapse wdCollapseStart
     rng.MoveEnd , -2
-    rng.expand wdWord
+    rng.Expand wdWord
   End If
 End If
 
 ' No non-alpha characters at the end of the word
-Do While InStr(ChrW(8217) & "!?.,;' ", Right(rng.text, 1)) > 0
+Do While InStr(ChrW(8217) & "!?.,;' ", Right(rng.Text, 1)) > 0
   rng.MoveEnd , -1
   DoEvents
 Loop
 
 ' No numbers inside the word
-Do While InStr(ChrW(8217) & "!?.,;' ", Right(rng.text, 1)) > 0
+Do While InStr(ChrW(8217) & "!?.,;' ", Right(rng.Text, 1)) > 0
   rng.MoveEnd , -1
   DoEvents
 Loop
@@ -77,7 +83,7 @@ For i = 1 To Len(rng)
     myWord = myWord & rng.Characters(i)
   End If
 Next i
-If rng.text <> myWord Then rng.text = myWord
+If rng.Text <> myWord Then rng.Text = myWord
 
 ' Check spelling language
 ' (check only first character, in case of split language)
@@ -100,24 +106,24 @@ End If
 If Not (spellOK) Then
   Set suggList = Application.GetSpellingSuggestions(myWord, _
        MainDictionary:=lang)
-  If suggList.count > 0 Then
-    newWord = suggList.item(1).Name
-    If suggList.count > 1 And LCase(newWord) = myWord _
-         Then newWord = suggList.item(2).Name
+  If suggList.Count > 0 Then
+    newWord = suggList.Item(1).Name
+    If suggList.Count > 1 And LCase(newWord) = myWord _
+         Then newWord = suggList.Item(2).Name
   Else
     newWord = myWord
   End If
   If newWord <> myWord Then
-    rng.text = newWord
+    rng.Text = newWord
   Else
     spellOK = Application.CheckSpelling(myWord, _
          MainDictionary:=lang)
     If spellOK = False Then
       If newWord = myWord Then
         Beep
-        myTime = timer
+        myTime = Timer
         Do
-        Loop Until timer > myTime + 1
+        Loop Until Timer > myTime + 1
         Beep
         If langName = "English (United States)" _
              And Application.CheckSpelling(myWord, _
@@ -133,14 +139,11 @@ If Not (spellOK) Then
 Else
   If doBeep Then Beep
 End If
-rng.start = wasStart - 2
-rng.expand wdWord
+rng.Start = wasStart - 2
+rng.Expand wdWord
 apoPos = InStr(rng, "'")
 If apoPos > 0 Then rng.Characters(apoPos) = ChrW(8217)
 rng.Collapse wdCollapseEnd
 rng.Select
 End Sub
-
-
-
 

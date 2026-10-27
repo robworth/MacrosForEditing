@@ -1,0 +1,44 @@
+
+Sub FindThisFont()
+' Paul Beverley - Version 19.07.26
+' Finds text with the same font name as the current text
+
+If Selection.End - Selection.Start = 1 Then
+  Set rng = Selection.Range.Duplicate
+  rng.Collapse wdCollapseStart
+  rng.MoveEnd , 1
+  fnSize = rng.Font.Size
+Else
+  fnSize = 0
+End If
+Selection.Collapse wdCollapseStart
+Selection.MoveEnd , 1
+fn = Trim(Selection.Range.Font.Name)
+Selection.Collapse wdCollapseEnd
+startWas = Selection.Start
+With Selection.Find
+  .ClearFormatting
+  .Replacement.ClearFormatting
+  .Text = ""
+  .Font.Name = fn
+  If fnSize > 0 Then
+    .Font.Size = fnSize
+  End If
+  .Wrap = wdFindStop
+  .Replacement.Text = ""
+  .Forward = True
+  .MatchCase = False
+  .MatchWildcards = False
+  .MatchWholeWord = False
+  .MatchSoundsLike = False
+  .Execute
+  startNow = Selection.Start
+  If startNow = startWas Then
+    Selection.Collapse wdCollapseEnd
+    .Execute
+  End If
+End With
+If Not (Selection.Find.found) Then Beep
+End Sub
+
+

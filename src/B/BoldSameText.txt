@@ -1,0 +1,85 @@
+
+Sub BoldSameText()
+' Paul Beverley - Version 30.09.26
+' Emboldens all occurrences of the current text
+
+' Case sensitive?
+' doMatchCase = True
+doMatchCase = False
+
+' Preserve TC status and existing highlight colour
+oldColour = Options.DefaultHighlightColorIndex
+nowTrack = ActiveDocument.TrackRevisions
+ActiveDocument.TrackRevisions = False
+
+Set rng = Selection.Range.Duplicate
+
+' If nothing selected, select current word
+If rng.Start = rng.End Then
+  rng.Expand wdWord
+  Do While InStr(ChrW(8217) & "' ", Right(rng.Text, 1)) > 0
+    rng.MoveEnd , -1
+    DoEvents
+  Loop
+End If
+
+rng.Font.Bold = True
+Do
+  If rng.Start > 1 Then
+    rng.MoveStart , -1
+    myTest = rng.Font.Bold
+  Else
+    myTest = 9999999
+  End If
+  DoEvents
+Loop Until myTest = 9999999
+rng.MoveStart , 1
+Do While rng.Characters(1) = " " Or rng.Characters(1) = vbCr
+  rng.MoveStart , 1
+Loop
+
+Do
+    rng.MoveEnd , 1
+    myTest = rng.Font.Bold
+Loop Until myTest = 9999999
+rng.MoveEnd , -1
+
+Do While rng.Characters.last = " " Or rng.Characters.last = vbCr
+  rng.MoveEnd , -1
+Loop
+
+myFindText = rng.Text
+
+myDo = "TEF"
+If ActiveDocument.Footnotes.Count = 0 Then myDo = Replace(myDo, "F", "")
+If ActiveDocument.Endnotes.Count = 0 Then myDo = Replace(myDo, "E", "")
+
+For myRun = 1 To Len(myDo)
+  doIt = Mid(myDo, myRun, 1)
+  Select Case doIt
+     Case "T": Set rng = ActiveDocument.Content
+     Case "F": Set rng = ActiveDocument.StoryRanges(wdFootnotesStory)
+     Case "E": Set rng = ActiveDocument.StoryRanges(wdEndnotesStory)
+  End Select
+
+  With rng.Find
+    .ClearFormatting
+    .Replacement.ClearFormatting
+    .Text = Trim(myFindText)
+    .MatchCase = doMatchCase
+    .Forward = True
+    .Replacement.Text = "^&"
+    .Replacement.Font.Bold = True
+    .Wrap = wdFindContinue
+    .MatchWildcards = False
+    .Execute Replace:=wdReplaceAll
+  End With
+Next myRun
+
+' Restore to original state
+Options.DefaultHighlightColorIndex = oldColour
+ActiveDocument.TrackRevisions = nowTrack
+End Sub
+
+
+
